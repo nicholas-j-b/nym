@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 
-std::vector<std::string> split(std::string stringToBeSplitted, std::string delimeter)
+std::vector<std::string> split_no_delim(std::string &stringToBeSplitted, std::string delimeter)
 {
   std::vector<std::string> splittedString;
   int startIndex = 0;
@@ -10,7 +10,10 @@ std::vector<std::string> split(std::string stringToBeSplitted, std::string delim
   while( (endIndex = stringToBeSplitted.find(delimeter, startIndex)) < stringToBeSplitted.size() )
   {
     std::string val = stringToBeSplitted.substr(startIndex, endIndex - startIndex);
-    splittedString.push_back(val);
+    if (!val.empty())
+    {
+      splittedString.push_back(val);
+    }
     startIndex = endIndex + delimeter.size();
   }
   if(startIndex < stringToBeSplitted.size())
@@ -21,13 +24,26 @@ std::vector<std::string> split(std::string stringToBeSplitted, std::string delim
   return splittedString;
 }
 
-int main(){
-  std::string myString = "here it is, and that's a wrap!";
-  std::string delimeter = " ";
-  std::vector<std::string> splitted = split(myString, delimeter);
+enum LINE_MODE {math, set};
 
-  for (auto & element : splitted){
-    std::cout<<element<<std::endl;
-  }
+LINE_MODE someFunc(LINE_MODE l){
+  return math;
+}
+
+int main(){
+  LINE_MODE lineMode = set;
+  lineMode = someFunc(lineMode);
+
+  std::cout<<lineMode<<std::endl;
+
+
+  // std::string myString = "   here   it      is, and that's a wrap!";
+  // std::string myString2 = "3243  2 23432";
+  // std::string delimeter = " ";
+  // std::vector<std::string> splitted = split_no_delim(myString, delimeter);
+  //
+  // for (auto & element : splitted){
+  //   std::cout<<element<<std::endl;
+  // }
   return 0;
 }
