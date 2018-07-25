@@ -1,11 +1,6 @@
 #include <iostream>
-#include <vector>
 #include <string>
-#include <regex>
-
-#include <editline/readline.h>
-#include <editline/history.h>
-
+#include <vector>
 
 std::vector<std::string> split(std::string stringToBeSplitted, std::string delimeter)
 {
@@ -27,16 +22,12 @@ std::vector<std::string> split(std::string stringToBeSplitted, std::string delim
 }
 
 int main(){
-  std::cout<<"nym 0.0.02a"<<std::endl;
-  std::string buffer;
+  std::string myString = "here it is, and that's a wrap!";
   std::string delimeter = " ";
-  while(1){
-    std::cout<<"nym> ";
-    std::getline(std::cin, buffer);
-    std::vector<std::string> splitted = split(buffer, delimeter);
-    for(auto & element : splitted){
-      std::cout<<element<<std::endl;
-    }
+  std::vector<std::string> splitted = split(myString, delimeter);
+
+  for (auto & element : splitted){
+    std::cout<<element<<std::endl;
   }
   return 0;
 }
