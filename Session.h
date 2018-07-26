@@ -1,5 +1,3 @@
-
-
 #include <iostream>
 #include <vector>
 #include <deque>
@@ -14,15 +12,23 @@
 #include "cfg.h"
 #include "PoolAllocator.h"
 
+class LineComprehension{
+private:
+  comprehensionFormula;
+public:
+  comprehend;
+}
+
 class Session{
+  friend class LineComprehension;
 private:
   std::string m_buffer;
   std::string m_delimeter;
-  nym::LINE_MODE m_currentLineMode;
-  nym::PoolAllocator<nym::lNumVector> m_lVecAllocator;
-  nym::PoolAllocator<nym::dNumVector> m_dVecAllocator;
-  std::deque<nym::lNumVector*> m_lNumDq;
-  std::deque<nym::dNumVector*> m_dNumDq;
+  mem::LINE_MODE m_currentLineMode;
+  mem::PoolAllocator<mem::lNumVector> m_lVecAllocator;
+  mem::PoolAllocator<mem::dNumVector> m_dVecAllocator;
+  std::deque<mem::lNumVector*> m_lNumDq;
+  std::deque<mem::dNumVector*> m_dNumDq;
   std::deque<std::string> m_lNames;
   std::deque<std::string> m_dNames;
 public:
@@ -30,12 +36,13 @@ public:
   ~Session(){
     for(auto& i : m_lNumDq){
       m_lVecAllocator.deallocate(i);
+      std::cout<<"correctly destructed"<<std::endl;
     }
     for(auto& i : m_dNumDq){
       m_dVecAllocator.deallocate(i);
     }
   };
-  nym::ERROR_CODE main_loop(){
+  mem::ERROR_CODE main_loop(){
 
     while(true){
       std::cout<<"nym> ";
@@ -43,8 +50,8 @@ public:
       std::deque<std::string> splitted = split_no_delim(m_buffer, m_delimeter);
       m_currentLineMode = get_line_mode(splitted.front());
       switch(m_currentLineMode){
-        case nym::math: evaluate_maths(splitted); break;
-        case nym::set: evaluate_set(splitted); break;
+        case mem::math: evaluate_maths(splitted); break;
+        case mem::set: evaluate_set(splitted); break;
       }
       // std::cout<<"the mode is: "<<lineMode<<std::endl;
       // if(lineMode == math){
@@ -61,7 +68,7 @@ public:
     for(auto & element : d){
       r += std::stoi(element, nullptr);
     }
-    std::cout<<r<<std::endl;;
+    std::cout<<r<<std::endl;
   }
   void evaluate_set(std::deque<std::string> d){
     if (std::regex_match(d[1], std::regex("l")))
@@ -78,18 +85,18 @@ public:
       m_dNames.push_back(d[2]);
     }
   }
-  nym::LINE_MODE get_line_mode(std::string s){
+  mem::LINE_MODE get_line_mode(std::string s){
     if(std::regex_search(s, std::regex("^[0-9]")))
     {
-      return nym::math;
+      return mem::math;
     }
     else if (std::regex_match(s, std::regex("set")))
     {
-      return nym::set;
+      return mem::set;
     }
     else
     {
-      return nym::non;
+      return mem::non;
     }
   }
 
@@ -116,5 +123,3 @@ public:
   }
 
 };
-
-// enum DATA_MODE {iNums, dNums, cChar};

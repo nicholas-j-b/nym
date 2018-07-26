@@ -1,35 +1,25 @@
 #include <memory>
 
-namespace nym{
+namespace mem{
   enum LINE_MODE {math, set, non};
   enum ERROR_CODE {noError, unknownError};
 
-  union lContent {
+  union Content {
     long lNums[cfg::CONTENT_SIZE];
+    double dNums[cfg::CONTENT_SIZE];
     char cChar[cfg::CONTENT_SIZE * sizeof(long)];
   };
-  union dContent {
-    double dNums[cfg::CONTENT_SIZE];
-    char cChar[cfg::CONTENT_SIZE * sizeof(double)];
-  };
 
-  class lNumVector {
-  private:
-    lContent m_content;
+  class NumVector{
+  protected:
+    Content m_content;
   public:
-    lNumVector() {};
-    ~lNumVector() {};
-    lNumVector(const lNumVector& other) = delete;
-    lNumVector(const lNumVector&& other) = delete;
-    lNumVector& operator=(const lNumVector& other) = delete;
-    lNumVector& operator=(const lNumVector&& other) = delete;
-
-    long operator[](int i) const {return m_content.lNums[i];}
-    long& operator[](int i){if(i <= cfg::CONTENT_SIZE){return m_content.lNums[i];}}
-
-    void zeros(){
-      std::memset(m_content.lNums, 0, cfg::CONTENT_SIZE);
-    }
+    NumVector() {};
+    ~NumVector() {};
+    NumVector(const NumVector& other) = delete;
+    NumVector(const NumVector&& other) = delete;
+    NumVector& operator=(const NumVector& other) = delete;
+    NumVector& operator=(const NumVector&& other) = delete;
 
     void set_all(int a){
       for (size_t i = 0; i < cfg::CONTENT_SIZE; ++i){
@@ -44,29 +34,22 @@ namespace nym{
     }
   };
 
-  class dNumVector {
+  class lNumVector : public NumVector {
   private:
-    dContent m_content;
   public:
-    dNumVector() {};
-    ~dNumVector() {};
-    dNumVector(const dNumVector& other) = delete;
-    dNumVector(const dNumVector&& other) = delete;
-    dNumVector& operator=(const dNumVector& other) = delete;
-    dNumVector& operator=(const dNumVector&& other) = delete;
-
-    double operator[](int i) const {return m_content.dNums[i];}
-    double& operator[](int i){if(i <= cfg::CONTENT_SIZE){return m_content.dNums[i];}}
+    long operator[](int i) const {return m_content.lNums[i];}
+    long& operator[](int i){if(i <= cfg::CONTENT_SIZE){return m_content.lNums[i];}}
 
     void zeros(){
-      std::memset(m_content.dNums, 0, cfg::CONTENT_SIZE);
+      std::memset(m_content.lNums, 0, cfg::CONTENT_SIZE);
     }
+  };
 
-    void set_all(int a){
-      for (size_t i = 0; i < cfg::CONTENT_SIZE; ++i){
-        m_content.dNums[i] = a;
-      }
-    }
+  class dNumVector : public NumVector {
+  private:
+  public:
+    double operator[](int i) const {return m_content.dNums[i];}
+    double& operator[](int i){if(i <= cfg::CONTENT_SIZE){return m_content.dNums[i];}}
   };
 
   template <typename T>
@@ -86,7 +69,7 @@ namespace nym{
     PoolChunk<T>* m_data = nullptr;
     PoolChunk<T>* m_head = nullptr;
   public:
-    explicit PoolAllocator(size_t size = cfg::CONTENT_SIZE)
+    explicit PoolAllocator(size_t size = cfg::NUM_CONTENT_IN_POOL)
       : m_size(size)
     {
       m_data = new PoolChunk<T>[size];
