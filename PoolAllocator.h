@@ -1,7 +1,6 @@
 #include <memory>
 
 namespace mem{
-  enum LINE_MODE {math, set, non};
   enum ERROR_CODE {noError, unknownError};
 
   union Content {
@@ -9,6 +8,7 @@ namespace mem{
     double dNums[cfg::CONTENT_SIZE];
     char cChar[cfg::CONTENT_SIZE * sizeof(long)];
   };
+
 
   class NumVector{
   protected:
