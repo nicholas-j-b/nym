@@ -17,6 +17,7 @@
 class Session{
 private:
   std::string m_buffer;
+  lco::SYMBOL m_formEntries[cfg::MAX_NUM_LINE_SYMBOLS] = { };
   //lco::LINE_MODE m_currentLineMode;
   mem::PoolAllocator<mem::lNumVector> m_lVecAllocator;
   mem::PoolAllocator<mem::dNumVector> m_dVecAllocator;
@@ -34,7 +35,7 @@ public:
     for(auto& i : m_dNumDq){
       m_dVecAllocator.deallocate(i);
     }
-  }; // end constructor
+  }; // end deconstructor
 
   mem::ERROR_CODE main_loop(){
     while(true){
@@ -42,14 +43,16 @@ public:
       std::getline(std::cin, m_buffer);
       std::deque<std::string> splitted = split_no_delim(m_buffer, cfg::LINE_DELIMETER);
       // m_currentLineMode = get_line_mode(splitted.front());
-      lco::COMPREHENSION_FORM form = comprehend_line(splitted);
+      comprehend_line(splitted, m_formEntries);
       for(auto & element : splitted){
         std::cout<<element<<std::endl;
       }
-      std::cout<<form.s<<std::endl;
+      for(size_t i = 0; i < 10; i++){
+        std::cout<<m_formEntries[i]<<std::endl;
+      }
     }
     return mem::noError;
-  }; // end main_loop()
+  } // end main_loop()
 
   lco::SYMBOL comprehend_element(const std::string& element){
     for(auto const& val : lco::SYMBOL_CONVERSIONS_MAP){
@@ -58,23 +61,18 @@ public:
       }
     }
     return lco::unknown;
-  };
+  } // end comprehend_element
 
-  // for (auto it = v.begin(); it != v.end(); ++it) {
-  //     // if the current index is needed:
-  //     auto i = std::distance(v.begin(), it);
-
-  lco::COMPREHENSION_FORM comprehend_line(std::deque<std::string>& lineElements){
-    lco::COMPREHENSION_FORM form;
-    for(auto it = lineElements.begin(); it != lineElements.end(); ++i){
+  void comprehend_line(std::deque<std::string>& lineElements, lco::SYMBOL* formEntries){
+    for(auto it = lineElements.begin(); it != lineElements.end(); ++it){
       auto i = std::distance(lineElements.begin(), it);
-      lco::SYMBOL symbolKey = comprehend_element(*it);
-
+      if(i >= cfg::MAX_NUM_LINE_SYMBOLS){
+        formEntries[cfg::MAX_NUM_LINE_SYMBOLS] = lco::tooLong;
+        break;
+      }
+      formEntries[i] = comprehend_element(*it);
     }
-    return form;
-  };
-
-
+  } // end comprehend_line
 
 
   // void evaluate_maths(std::deque<std::string> d){
@@ -115,8 +113,7 @@ public:
   //     return mem::non;
   //   }
   // }
-  std::deque<std::string> split_no_delim(std::string& stringToBeSplitted, std::string delimeter)
-  {
+  std::deque<std::string> split_no_delim(std::string& stringToBeSplitted, std::string delimeter){
     std::deque<std::string> splittedString;
     int startIndex = 0;
     int  endIndex = 0;
@@ -135,7 +132,7 @@ public:
       splittedString.push_back(val);
     }
     return splittedString;
-  }; // end split_no_delim
+  } // end split_no_delim
 
 
 };
