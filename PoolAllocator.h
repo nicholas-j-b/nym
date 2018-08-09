@@ -13,9 +13,11 @@ namespace mem{
   class NumVector{
   protected:
     Content m_content;
+    size_t m_contentSize;
   public:
-    NumVector() {};
-    ~NumVector() {};
+    NumVector() {m_contentSize = 0;};
+    NumVector(size_t size) : m_contentSize(size) {};
+    virtual ~NumVector() {};
     NumVector(const NumVector& other) = delete;
     NumVector(const NumVector&& other) = delete;
     NumVector& operator=(const NumVector& other) = delete;
@@ -27,10 +29,19 @@ namespace mem{
       }
     }
 
+    void print(){
+      for(size_t i = 0; i < m_contentSize; ++i){
+        std::cout<<m_content.lNums[i]<<", ";
+      }
+      std::cout<<std::endl;
+    }
+
     void print(size_t a){
+      m_contentSize = cfg::CONTENT_SIZE;
       for(size_t i = 0; i < a; ++i){
         std::cout<<m_content.lNums[i]<<", ";
       }
+      std::cout<<std::endl;
     }
   };
 

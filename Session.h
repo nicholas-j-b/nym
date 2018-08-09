@@ -6,6 +6,8 @@
 #include <cstring>
 #include <regex>
 #include <map>
+#include <typeinfo>
+#include <algorithm>
 
 #include <editline/readline.h>
 #include <editline/history.h>
@@ -17,20 +19,23 @@
 class Session{
 private:
   std::string m_buffer;
-  lco::SYMBOL m_formEntries[cfg::MAX_NUM_LINE_SYMBOLS] = { };
-  //lco::LINE_MODE m_currentLineMode;
+  std::vector<lco::SYMBOL> m_formEntries;
+  std::deque<std::string> m_splittedBuffer;
+
   mem::PoolAllocator<mem::lNumVector> m_lVecAllocator;
   mem::PoolAllocator<mem::dNumVector> m_dVecAllocator;
+  std::map<std::string, mem::NumVector*> m_varMap;
+
   std::deque<mem::lNumVector*> m_lNumDq;
   std::deque<mem::dNumVector*> m_dNumDq;
   std::deque<std::string> m_lNames;
   std::deque<std::string> m_dNames;
+
 public:
-  Session() {};
+  Session() {m_formEntries.reserve(cfg::MAX_NUM_LINE_SYMBOLS);};
   ~Session(){
     for(auto& i : m_lNumDq){
       m_lVecAllocator.deallocate(i);
-      std::cout<<"correctly destructed"<<std::endl;
     }
     for(auto& i : m_dNumDq){
       m_dVecAllocator.deallocate(i);
@@ -38,21 +43,80 @@ public:
   }; // end deconstructor
 
   mem::ERROR_CODE main_loop(){
-    while(true){
+    std::vector<erc::ERROR> exitStatus;
+    exitStatus.reserve(cfg::NUM_CHECKS);
+    for(size_t i = 0; i < cfg::NUM_CHECKS; ++i){
+      exitStatus.push_back(erc::noError);
+    }
+    while(std::all_of(exitStatus.begin(), exitStatus.end(), [](erc::ERROR e){return e == erc::noError ? true : false;})){
       std::cout<<"nym> ";
       std::getline(std::cin, m_buffer);
-      std::deque<std::string> splitted = split_no_delim(m_buffer, cfg::LINE_DELIMETER);
-      // m_currentLineMode = get_line_mode(splitted.front());
-      comprehend_line(splitted, m_formEntries);
-      for(auto & element : splitted){
-        std::cout<<element<<std::endl;
-      }
-      for(size_t i = 0; i < 10; i++){
-        std::cout<<m_formEntries[i]<<std::endl;
-      }
+      m_splittedBuffer = split_no_delim(m_buffer, cfg::LINE_DELIMETER);
+      exitStatus[0] = comprehend_line();
+      exitStatus[1] = interpret();
     }
     return mem::noError;
   } // end main_loop()
+
+  erc::ERROR interpret(){
+    erc::ERROR e = erc::noError;
+    switch (m_formEntries[0]) {
+      case lco::exitP :
+        e = erc::userQuit;
+        break;
+      case lco::set :
+        e = interpret_set();
+        break;
+      case lco::variable :
+        e = display_variable();
+        break;
+    }
+    return e;
+  } // end interpret()
+
+  erc::ERROR display_variable(){
+    auto position = m_varMap.find(m_splittedBuffer[0]);
+    if(position == m_varMap.end()){
+      std::cout<<"variable not yet set"<<std::endl;
+      return erc::unknownVariable;
+    } else {
+      mem::lNumVector* pos = dynamic_cast<mem::lNumVector*>(position->second);
+      for(size_t i = 0; i < 10; ++i){
+        std::cout<<(*pos)[i]<<" ";
+      }
+      std::cout<<std::endl;
+    }
+    return erc::noError;
+  } // end display_variable()
+
+  erc::ERROR interpret_set(){
+    if(m_formEntries[1] != lco::variable){
+      return erc::invalidVariable;
+    }
+    if(m_varMap.find(m_splittedBuffer[1]) == m_varMap.end()){
+      m_lNumDq.push_back(m_lVecAllocator.allocate());
+      mem::lNumVector* justAdded = m_lNumDq.back();
+      justAdded->set_all(std::stoi(m_splittedBuffer[2], nullptr, 10));
+      m_varMap.insert(std::pair<std::string, mem::NumVector*>(m_splittedBuffer[1], justAdded));
+      return erc::noError;
+    } else {
+      std::cout<<"overwriteVariableAttempt"<<std::endl;
+      return erc::overwriteVariableAttempt;
+    }
+  } // end interpret_set()
+
+  erc::ERROR user_quit(){
+    return m_formEntries[0] == lco::exitP ? erc::userQuit : erc::noError;
+  } // end user_quit()
+
+  void debug_printing(const std::deque<std::string>& splitted){
+    for(auto & element : splitted){
+      std::cout<<element<<std::endl;
+    }
+    for(size_t i = 0; i < 10; i++){
+      std::cout<<m_formEntries[i]<<std::endl;
+    }
+  } // end debug_printing()
 
   lco::SYMBOL comprehend_element(const std::string& element){
     for(auto const& val : lco::SYMBOL_CONVERSIONS_MAP){
@@ -63,56 +127,17 @@ public:
     return lco::unknown;
   } // end comprehend_element
 
-  void comprehend_line(std::deque<std::string>& lineElements, lco::SYMBOL* formEntries){
-    for(auto it = lineElements.begin(); it != lineElements.end(); ++it){
-      auto i = std::distance(lineElements.begin(), it);
+  erc::ERROR comprehend_line(){
+    for(auto it = m_splittedBuffer.begin(); it != m_splittedBuffer.end(); ++it){
+      auto i = std::distance(m_splittedBuffer.begin(), it);
       if(i >= cfg::MAX_NUM_LINE_SYMBOLS){
-        formEntries[cfg::MAX_NUM_LINE_SYMBOLS] = lco::tooLong;
-        break;
+        return erc::tooLong;
       }
-      formEntries[i] = comprehend_element(*it);
+      m_formEntries[i] = comprehend_element(*it);
     }
+    return erc::noError;
   } // end comprehend_line
 
-
-  // void evaluate_maths(std::deque<std::string> d){
-  //   int r = 0;
-  //   for(auto & element : d){
-  //     r += std::stoi(element, nullptr);
-  //   }
-  //   std::cout<<r<<std::endl;
-  // }; // end evaluate_maths
-  //
-  // void evaluate_set(std::deque<std::string> d){
-  //   if (std::regex_match(d[1], std::regex("l")))
-  //   {
-  //     m_lNames.push_back(d[2]);
-  //     m_lNumDq.push_back(m_lVecAllocator.allocate());
-  //     std::cout<<"l vec set!"<<std::endl;
-  //     m_lNumDq[0]->print(5);
-  //     m_lNumDq[0]->set_all(5);
-  //     m_lNumDq[0]->print(5);
-  //   }
-  //   else if (std::regex_match(d[1], std::regex("d")))
-  //   {
-  //     m_dNames.push_back(d[2]);
-  //   }
-  // }; // end evaluate_set
-
-  // mem::LINE_MODE get_line_mode(std::string s){
-  //   if(std::regex_search(s, std::regex("^[0-9]")))
-  //   {
-  //     return mem::math;
-  //   }
-  //   else if (std::regex_match(s, std::regex("set")))
-  //   {
-  //     return mem::set;
-  //   }
-  //   else
-  //   {
-  //     return mem::non;
-  //   }
-  // }
   std::deque<std::string> split_no_delim(std::string& stringToBeSplitted, std::string delimeter){
     std::deque<std::string> splittedString;
     int startIndex = 0;
