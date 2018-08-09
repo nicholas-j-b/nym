@@ -43,11 +43,7 @@ public:
   }; // end deconstructor
 
   mem::ERROR_CODE main_loop(){
-    std::vector<erc::ERROR> exitStatus;
-    exitStatus.reserve(cfg::NUM_CHECKS);
-    for(size_t i = 0; i < cfg::NUM_CHECKS; ++i){
-      exitStatus.push_back(erc::noError);
-    }
+    std::vector<erc::ERROR> exitStatus(cfg::NUM_CHECKS, erc::noError);
     while(std::all_of(exitStatus.begin(), exitStatus.end(), [](erc::ERROR e){return e == erc::noError ? true : false;})){
       std::cout<<"nym> ";
       std::getline(std::cin, m_buffer);
